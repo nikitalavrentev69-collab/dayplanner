@@ -1,4 +1,4 @@
-const CACHE = "dayplanner-shell-v7";
+const CACHE = "dayplanner-shell-v8";
 const SCOPE = self.registration.scope;
 const ASSETS = [
   "./",
@@ -47,7 +47,9 @@ async function cachedFallback(request, candidates) {
 
 async function networkFirst(request, candidates) {
   try {
-    const response = await fetch(request);
+    const options =
+      request.mode === "navigate" ? { cache: "no-store" } : undefined;
+    const response = await fetch(request, options);
     if (response && response.ok) {
       const copy = response.clone();
       caches.open(CACHE).then((cache) => cache.put(request, copy));

@@ -129,10 +129,59 @@
       letter-spacing: .08em; text-transform: uppercase;
       margin: 0 2px 10px;
     }
-    .weather-line {
-      margin: -4px 2px 14px;
-      font-size: 11px; color: var(--muted); line-height: 1.4;
+    .weather-card {
+      position: relative;
+      display: flex; align-items: center; gap: 13px;
+      margin: 0 0 16px;
+      padding: 14px 15px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.08);
+      background:
+        radial-gradient(120% 160% at 0% 0%, rgba(124,108,255,.20), transparent 62%),
+        linear-gradient(135deg, #1c2131, #151922);
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      overflow: hidden;
     }
+    .weather-card::after {
+      content: ""; position: absolute; right: -30px; top: -45px;
+      width: 120px; height: 120px; border-radius: 50%;
+      background: rgba(255,255,255,.04);
+      pointer-events: none;
+    }
+    .weather-card[data-kind="clear"] {
+      background:
+        radial-gradient(120% 160% at 0% 0%, rgba(255,200,87,.24), transparent 62%),
+        linear-gradient(135deg, #262116, #17181d);
+    }
+    .weather-card[data-kind="rain"] {
+      background:
+        radial-gradient(120% 160% at 0% 0%, rgba(76,201,240,.22), transparent 62%),
+        linear-gradient(135deg, #17232d, #141820);
+    }
+    .weather-card[data-kind="snow"] {
+      background:
+        radial-gradient(120% 160% at 0% 0%, rgba(200,225,255,.20), transparent 62%),
+        linear-gradient(135deg, #1c2430, #151922);
+    }
+    .weather-icon {
+      width: 48px; flex: 0 0 48px; text-align: center;
+      font-size: 38px; line-height: 1;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,.35));
+    }
+    .weather-body { flex: 1; min-width: 0; }
+    .weather-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .weather-temp {
+      font-size: 30px; font-weight: 800; line-height: 1;
+      letter-spacing: -.04em;
+    }
+    .weather-desc { font-size: 12px; color: var(--text); opacity: .92; }
+    .weather-meta { margin-top: 6px; font-size: 10.5px; color: var(--muted); }
+    .weather-place {
+      flex: 0 0 auto; align-self: flex-start; text-align: right;
+      font-size: 8.5px; color: var(--muted-2); line-height: 1.35;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .weather-place span { display: block; margin-top: 2px; font-size: 8px; opacity: .8; }
     .section-head .count { font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 10px; }
     .task {
       display: flex; align-items: flex-start; gap: 11px;
@@ -288,6 +337,10 @@
       .brand-sub { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .conn span:last-child { display: none; }
       .weekstrip { gap: 2px; }
+      .weather-card { gap: 10px; padding: 13px; }
+      .weather-icon { width: 40px; flex-basis: 40px; font-size: 32px; }
+      .weather-temp { font-size: 27px; }
+      .weather-place { font-size: 8px; }
     }
   </style>
 </head>
@@ -322,7 +375,17 @@
       <button class="arrow" id="nextWeek" aria-label="Следующая неделя">›</button>
     </div>
 
-    <div class="weather-line hidden" id="weatherLine"></div>
+    <div class="weather-card hidden" id="weatherLine">
+      <div class="weather-icon" id="weatherIcon">☁</div>
+      <div class="weather-body">
+        <div class="weather-top">
+          <span class="weather-temp" id="weatherTemp">—</span>
+          <span class="weather-desc" id="weatherDesc">погода</span>
+        </div>
+        <div class="weather-meta" id="weatherMeta">загружаем…</div>
+      </div>
+      <div class="weather-place">Чебоксары<span>MET.no</span></div>
+    </div>
 
     <div class="section-head">
       <span>План на день</span>
@@ -448,6 +511,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="cloud.js?v=8bedae16eb"></script>
+  <script src="cloud.js?v=9016d54286"></script>
 </body>
 </html>

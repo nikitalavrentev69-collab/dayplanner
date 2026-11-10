@@ -76,6 +76,10 @@
     loginBtn: $("cloudLoginBtn"), loginError: $("cloudLoginError"),
     toast: $("toast"),
     weather: $("weatherLine"),
+    weatherIcon: $("weatherIcon"),
+    weatherTemp: $("weatherTemp"),
+    weatherDesc: $("weatherDesc"),
+    weatherMeta: $("weatherMeta"),
     notifyBtn: $("notifyBtn"),
     logoutBtn: $("logoutBtn")
   };
@@ -162,11 +166,17 @@
       if (!Number.isFinite(number)) return "—";
       return number > 0 ? `+${number}` : String(number);
     };
-    ui.weather.textContent =
-      `${weather.icon || "☁"} ${signed(weather.temp)}° · ` +
-      `${String(weather.desc || "").toLowerCase()} · ` +
-      `${signed(weather.tmin)}…${signed(weather.tmax)}° · ` +
-      `ветер ${Math.round(Number(weather.wind || 0))} м/с · MET.no`;
+    if (ui.weatherIcon) ui.weatherIcon.textContent = weather.icon || "☁";
+    if (ui.weatherTemp) ui.weatherTemp.textContent = `${signed(weather.temp)}°`;
+    if (ui.weatherDesc) {
+      ui.weatherDesc.textContent = String(weather.desc || "").toLowerCase();
+    }
+    if (ui.weatherMeta) {
+      ui.weatherMeta.textContent =
+        `${signed(weather.tmin)}…${signed(weather.tmax)}° · ` +
+        `ветер ${Math.round(Number(weather.wind || 0))} м/с`;
+    }
+    ui.weather.dataset.kind = weather.kind || "cloud";
     ui.weather.classList.remove("hidden");
   }
 
@@ -198,7 +208,17 @@
       const tmin = temperatures.length ? Math.round(Math.min(...temperatures)) : temp;
       const tmax = temperatures.length ? Math.round(Math.max(...temperatures)) : temp;
       const wind = Math.round(Number(details.wind_speed || 0));
-      state.weather = { temp, desc, icon, wind, tmin, tmax, fetched: Date.now() };
+      const kind =
+        symbol.includes("rain") || symbol.includes("thunder")
+          ? "rain"
+          : symbol.includes("snow") || symbol.includes("sleet")
+            ? "snow"
+            : symbol === "clearsky" || symbol === "fair"
+              ? "clear"
+              : "cloud";
+      state.weather = {
+        temp, desc, icon, wind, tmin, tmax, kind, fetched: Date.now()
+      };
       try {
         localStorage.setItem(WEATHER_KEY, JSON.stringify(state.weather));
       } catch (e) {}

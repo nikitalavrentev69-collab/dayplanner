@@ -55,6 +55,7 @@
   let syncTimer = null;
   let toastTimer = null;
   let editing = null;
+  let notificationsBusy = false;
 
   function pad(n) { return String(n).padStart(2, "0"); }
   function todayISO() {
@@ -692,6 +693,7 @@
   }
 
   async function enableNotifications() {
+    if (notificationsBusy) return;
     if (!state.session) {
       showLogin("Сначала войдите в облако");
       return;
@@ -700,6 +702,7 @@
       showToast("Этот браузер не поддерживает push-уведомления");
       return;
     }
+    notificationsBusy = true;
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
@@ -737,6 +740,8 @@
       updateNotifyButton();
     } catch (error) {
       showToast("Не удалось включить уведомления: " + error.message);
+    } finally {
+      notificationsBusy = false;
     }
   }
 

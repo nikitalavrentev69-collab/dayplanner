@@ -76,7 +76,8 @@
     loginBtn: $("cloudLoginBtn"), loginError: $("cloudLoginError"),
     toast: $("toast"),
     weather: $("weatherLine"),
-    notifyBtn: $("notifyBtn")
+    notifyBtn: $("notifyBtn"),
+    logoutBtn: $("logoutBtn")
   };
 
   const state = {
@@ -866,6 +867,41 @@
     }
   }
 
+  async function logout() {
+    if (!confirm("Выйти из облака на этом устройстве? Локальная копия задач будет удалена.")) {
+      return;
+    }
+    try {
+      if ("serviceWorker" in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          const endpoint = subscription.endpoint;
+          await subscription.unsubscribe().catch(() => {});
+          if (state.session) {
+            try {
+              await authRequest(
+                `/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}`,
+                { method: "DELETE" }
+              );
+            } catch (e) {}
+          }
+        }
+      }
+    } catch (e) {}
+    saveSession(null);
+    state.tasks = [];
+    state.deleted = [];
+    try {
+      localStorage.removeItem(TASKS_KEY);
+      localStorage.removeItem(DELETED_KEY);
+      localStorage.removeItem(LAST_KEY);
+    } catch (e) {}
+    render();
+    showLogin();
+    updateNotifyButton();
+  }
+
   function bind() {
     ui.add.addEventListener("click", () => openSheet());
     ui.emptyAdd.addEventListener("click", () => openSheet());
@@ -888,6 +924,7 @@
     });
     ui.loginBtn.addEventListener("click", login);
     if (ui.notifyBtn) ui.notifyBtn.addEventListener("click", enableNotifications);
+    if (ui.logoutBtn) ui.logoutBtn.addEventListener("click", logout);
     ui.password.addEventListener("keydown", (e) => {
       if (e.key === "Enter") login();
     });

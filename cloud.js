@@ -876,17 +876,16 @@
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.getSubscription();
         if (subscription) {
-          const endpoint = subscription.endpoint;
           await subscription.unsubscribe().catch(() => {});
-          if (state.session) {
-            try {
-              await authRequest(
-                `/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}`,
-                { method: "DELETE" }
-              );
-            } catch (e) {}
-          }
         }
+      }
+      if (state.session) {
+        try {
+          await authRequest(
+            `/rest/v1/push_subscriptions?user_id=eq.${state.session.user_id}`,
+            { method: "DELETE" }
+          );
+        } catch (e) {}
       }
     } catch (e) {}
     saveSession(null);

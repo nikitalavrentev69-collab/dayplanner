@@ -8,6 +8,40 @@
   const TASKS_KEY = "dp_cloud_tasks";
   const DELETED_KEY = "dp_cloud_deleted";
   const LAST_KEY = "dp_cloud_last";
+  const WEATHER_KEY = "dp_cloud_weather";
+  const WEATHER_URL =
+    "https://api.met.no/weatherapi/locationforecast/2.0/compact" +
+    "?lat=56.152&lon=47.206";
+  const WEATHER_CODES = {
+    clearsky: ["Ясно", "☀"],
+    fair: ["Малооблачно", "🌤"],
+    partlycloudy: ["Переменная облачность", "⛅"],
+    cloudy: ["Облачно", "☁"],
+    fog: ["Туман", "🌫"],
+    lightrain: ["Небольшой дождь", "🌦"],
+    rain: ["Дождь", "🌧"],
+    heavyrain: ["Сильный дождь", "🌧"],
+    lightrainshowers: ["Небольшой ливень", "🌦"],
+    rainshowers: ["Ливень", "🌧"],
+    heavyrainshowers: ["Сильный ливень", "⛈"],
+    lightsleet: ["Небольшой мокрый снег", "🌨"],
+    sleet: ["Мокрый снег", "🌨"],
+    heavysleet: ["Сильный мокрый снег", "🌨"],
+    lightsnow: ["Небольшой снег", "🌨"],
+    snow: ["Снег", "🌨"],
+    heavysnow: ["Сильный снег", "❄"],
+    lightsnowshowers: ["Небольшой снегопад", "🌨"],
+    snowshowers: ["Снегопад", "❄"],
+    thunderstorm: ["Гроза", "⛈"],
+    lightrainandthunder: ["Гроза с дождём", "⛈"],
+    rainandthunder: ["Гроза с дождём", "⛈"],
+    heavyrainandthunder: ["Сильная гроза", "⛈"],
+    lightsleetandthunder: ["Гроза с мокрым снегом", "⛈"],
+    sleetandthunder: ["Гроза с мокрым снегом", "⛈"],
+    heavysleetandthunder: ["Сильная гроза", "⛈"],
+    lightsnowandthunder: ["Гроза со снегом", "⛈"],
+    snowandthunder: ["Гроза со снегом", "⛈"]
+  };
 
   const MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   const WEEKDAYS_SHORT = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
@@ -49,7 +83,8 @@
     tasks: [],
     deleted: [],
     session: null,
-    selected: todayISO()
+    selected: todayISO(),
+    weather: null
   };
   let syncing = false;
   let syncTimer = null;
@@ -114,6 +149,64 @@
     ].join("|");
   }
 
+  function renderWeather() {
+    if (!ui.weather) return;
+    const weather = state.weather;
+    if (!weather || !Number.isFinite(Number(weather.temp))) {
+      ui.weather.classList.add("hidden");
+      return;
+    }
+    const signed = (value) => {
+      const number = Math.round(Number(value));
+      if (!Number.isFinite(number)) return "—";
+      return number > 0 ? `+${number}` : String(number);
+    };
+    ui.weather.textContent =
+      `${weather.icon || "☁"} ${signed(weather.temp)}° · ` +
+      `${String(weather.desc || "").toLowerCase()} · ` +
+      `${signed(weather.tmin)}…${signed(weather.tmax)}° · ` +
+      `ветер ${Math.round(Number(weather.wind || 0))} м/с · MET.no`;
+    ui.weather.classList.remove("hidden");
+  }
+
+  async function loadWeather() {
+    const cached = state.weather;
+    if (cached && Date.now() - Number(cached.fetched || 0) < 30 * 60 * 1000) {
+      renderWeather();
+      return;
+    }
+    try {
+      const response = await fetch(WEATHER_URL, {
+        headers: { Accept: "application/json" },
+        cache: "no-store"
+      });
+      if (!response.ok) throw new Error("weather");
+      const payload = await response.json();
+      const series = payload.properties.timeseries;
+      const details = series[0].data.instant.details;
+      const temp = Math.round(Number(details.air_temperature));
+      const summary =
+        series[0].data.next_1_hours || series[0].data.next_6_hours || {};
+      const symbol = String(summary.summary?.symbol_code || "cloudy")
+        .split("_")[0].toLowerCase();
+      const [desc, icon] = WEATHER_CODES[symbol] || ["Облачно", "☁"];
+      const temperatures = series
+        .slice(0, 25)
+        .map((entry) => Number(entry.data.instant.details.air_temperature))
+        .filter((value) => Number.isFinite(value));
+      const tmin = temperatures.length ? Math.round(Math.min(...temperatures)) : temp;
+      const tmax = temperatures.length ? Math.round(Math.max(...temperatures)) : temp;
+      const wind = Math.round(Number(details.wind_speed || 0));
+      state.weather = { temp, desc, icon, wind, tmin, tmax, fetched: Date.now() };
+      try {
+        localStorage.setItem(WEATHER_KEY, JSON.stringify(state.weather));
+      } catch (e) {}
+      renderWeather();
+    } catch (error) {
+      renderWeather();
+    }
+  }
+
   function showToast(text) {
     ui.toast.textContent = text;
     ui.toast.classList.add("show");
@@ -146,6 +239,10 @@
       const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
       if (session && session.access_token && session.refresh_token) {
         state.session = session;
+      }
+      const weather = JSON.parse(localStorage.getItem(WEATHER_KEY) || "null");
+      if (weather && Number.isFinite(Number(weather.temp))) {
+        state.weather = weather;
       }
     } catch (e) {}
   }
@@ -800,7 +897,10 @@
     window.addEventListener("online", () => syncCloud());
     window.addEventListener("focus", () => syncCloud());
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) syncCloud();
+      if (!document.hidden) {
+        syncCloud();
+        loadWeather();
+      }
     });
   }
 
@@ -817,7 +917,8 @@
     bind();
     restoreCache();
     render();
-    if (ui.weather) ui.weather.classList.add("hidden");
+    renderWeather();
+    loadWeather();
     ui.offline.textContent =
       "Нет связи с облаком. Изменения сохранены и отправятся позже.";
     if (state.session) {
@@ -831,6 +932,7 @@
     setInterval(() => {
       if (!document.hidden && state.session) syncCloud();
     }, 10000);
+    setInterval(loadWeather, 30 * 60 * 1000);
   }
 
   start();

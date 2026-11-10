@@ -64,7 +64,7 @@
     prevWeek: $("prevWeek"), nextWeek: $("nextWeek"),
     count: $("countLabel"), list: $("taskList"),
     empty: $("emptyState"), allDone: $("allDoneState"),
-    add: $("addBtn"), emptyAdd: $("emptyAdd"),
+    add: $("addBtn"), addInline: $("addInline"), emptyAdd: $("emptyAdd"),
     overlay: $("overlay"), sheet: $("sheet"),
     sheetTitle: $("sheetTitle"), close: $("sheetClose"),
     title: $("fTitle"), date: $("fDate"), time: $("fTime"),
@@ -923,6 +923,7 @@
 
   function bind() {
     ui.add.addEventListener("click", () => openSheet());
+    ui.addInline.addEventListener("click", () => openSheet());
     ui.emptyAdd.addEventListener("click", () => openSheet());
     ui.close.addEventListener("click", closeSheet);
     ui.cancel.addEventListener("click", closeSheet);

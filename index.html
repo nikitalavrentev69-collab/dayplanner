@@ -181,6 +181,16 @@
       letter-spacing: .02em;
     }
     .section-head .count { font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 10px; }
+    .section-tools { display: flex; align-items: center; gap: 7px; }
+    .add-inline {
+      border: 1px solid rgba(124,108,255,.35);
+      background: rgba(124,108,255,.14);
+      color: var(--accent-text);
+      border-radius: 999px; padding: 5px 9px;
+      font-size: 10px; font-weight: 600; line-height: 1.2;
+      letter-spacing: 0; text-transform: none; white-space: nowrap;
+    }
+    .add-inline:active { background: rgba(124,108,255,.24); }
     .task {
       display: flex; align-items: flex-start; gap: 11px;
       background: var(--card); border: 1px solid var(--border);
@@ -229,7 +239,7 @@
     .fab {
       position: fixed; z-index: 12;
       right: max(18px, calc((100vw - 720px) / 2 + 18px));
-      bottom: calc(20px + env(safe-area-inset-bottom));
+      bottom: calc(30px + env(safe-area-inset-bottom));
       width: 58px; height: 58px; border: 0; border-radius: 19px;
       background: linear-gradient(135deg, #9182ff, #6c5ce7);
       color: #fff; font-size: 30px; font-weight: 300; line-height: 1;
@@ -386,7 +396,10 @@
 
     <div class="section-head">
       <span>План на день</span>
-      <span class="count" id="countLabel"></span>
+      <div class="section-tools">
+        <span class="count" id="countLabel"></span>
+        <button class="add-inline" id="addInline" type="button">+ Задача</button>
+      </div>
     </div>
 
     <div id="taskList"></div>
@@ -508,6 +521,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="cloud.js?v=9016d54286"></script>
+  <script src="cloud.js?v=66c7b844ec"></script>
 </body>
 </html>

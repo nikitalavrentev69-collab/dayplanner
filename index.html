@@ -207,6 +207,22 @@
       width: 8px; height: 8px; flex: 0 0 8px;
       border-radius: 50%; margin-top: 5px;
     }
+    .category-picker { display: flex; flex-wrap: wrap; gap: 7px; }
+    .cat-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid var(--border); background: #11141c;
+      color: var(--muted); border-radius: 999px;
+      padding: 8px 10px; font-size: 11px; line-height: 1;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+    .cat-chip.active {
+      color: var(--text); border-color: var(--cat-color);
+      background: rgba(255,255,255,.06);
+    }
+    .cat-swatch {
+      width: 7px; height: 7px; flex: 0 0 7px;
+      border-radius: 50%; background: var(--cat-color);
+    }
     .task-title { font-size: 14px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
     .task-note { font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 3px; overflow-wrap: anywhere; }
     .task-meta { font-size: 10px; color: var(--muted-2); margin-top: 6px; }
@@ -481,17 +497,11 @@
           </select>
         </label>
       </div>
-      <label class="field">
+      <div class="field">
         <span>Категория</span>
-        <select class="select" id="fCategory">
-          <option value="study">● Пары</option>
-          <option value="work">● Работа</option>
-          <option value="doctor">● Врачи</option>
-          <option value="driving">● Вождение</option>
-          <option value="personal">● Личное</option>
-          <option value="other" selected>● Другое</option>
-        </select>
-      </label>
+        <div class="category-picker" id="fCategoryPicker"></div>
+        <input type="hidden" id="fCategory" value="other">
+      </div>
       <label class="field">
         <span>Заметка</span>
         <textarea class="textarea" id="fNote" maxlength="2000" placeholder="Кабинет, преподаватель, детали…"></textarea>
@@ -521,6 +531,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="cloud.js?v=66c7b844ec"></script>
+  <script src="cloud.js?v=c919b979a5"></script>
 </body>
 </html>

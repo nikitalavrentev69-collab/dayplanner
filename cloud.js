@@ -69,7 +69,7 @@
     sheetTitle: $("sheetTitle"), close: $("sheetClose"),
     title: $("fTitle"), date: $("fDate"), time: $("fTime"),
     duration: $("fDuration"), remind: $("fRemind"), note: $("fNote"),
-    category: $("fCategory"),
+    category: $("fCategory"), categoryPicker: $("fCategoryPicker"),
     error: $("formError"), save: $("saveBtn"), cancel: $("cancelBtn"),
     del: $("deleteBtn"),
     login: $("login"), email: $("cloudEmail"), password: $("cloudPassword"),
@@ -722,6 +722,37 @@
     select.appendChild(option);
   }
 
+  function buildCategoryPicker() {
+    if (!ui.categoryPicker) return;
+    ui.categoryPicker.innerHTML = "";
+    Object.entries(CATEGORIES).forEach(([key, category]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "cat-chip";
+      button.dataset.category = key;
+      button.style.setProperty("--cat-color", category.color);
+      const swatch = document.createElement("span");
+      swatch.className = "cat-swatch";
+      const label = document.createElement("span");
+      label.textContent = category.name;
+      button.append(swatch, label);
+      button.addEventListener("click", () => setCategory(key));
+      ui.categoryPicker.appendChild(button);
+    });
+    setCategory("other");
+  }
+
+  function setCategory(value) {
+    const key = CATEGORIES[value] ? value : "other";
+    ui.category.value = key;
+    if (!ui.categoryPicker) return;
+    [...ui.categoryPicker.children].forEach((chip) => {
+      const active = chip.dataset.category === key;
+      chip.classList.toggle("active", active);
+      chip.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
+
   function openSheet(task = null) {
     editing = task;
     ui.sheetTitle.textContent = task ? "Изменить задачу" : "Новая задача";
@@ -736,7 +767,7 @@
     const remind = task ? Number(task.remind) : 10;
     ensureOption(ui.remind, remind, remind < 0 ? "Без напоминания" : `За ${remind} мин`);
     ui.remind.value = String(remind);
-    ui.category.value = task && CATEGORIES[task.category] ? task.category : "other";
+    setCategory(task ? task.category : "other");
     ui.note.value = task ? (task.note || "") : "";
     ui.overlay.classList.add("open");
     ui.sheet.classList.add("open");
@@ -973,6 +1004,7 @@
   async function start() {
     bind();
     restoreCache();
+    buildCategoryPicker();
     render();
     renderWeather();
     loadWeather();

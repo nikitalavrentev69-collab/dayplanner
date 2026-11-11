@@ -168,7 +168,7 @@
       font-size: 38px; line-height: 1;
       filter: drop-shadow(0 6px 12px rgba(0,0,0,.35));
     }
-    .weather-body { flex: 1; min-width: 0; }
+    .weather-body { flex: 1; min-width: 0; padding-right: 30px; }
     .weather-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
     .weather-temp {
       font-size: 30px; font-weight: 800; line-height: 1;
@@ -180,6 +180,15 @@
       margin-top: 4px; font-size: 9px; color: var(--muted-2);
       letter-spacing: .02em;
     }
+    .weather-refresh {
+      position: absolute; right: 10px; top: 10px; z-index: 2;
+      width: 29px; height: 29px; border-radius: 9px;
+      border: 1px solid var(--border);
+      background: rgba(17,20,28,.72);
+      color: var(--muted); font-size: 16px; line-height: 1;
+    }
+    .weather-refresh:active { color: var(--text); background: var(--card-2); }
+    .weather-refresh:disabled { opacity: .5; }
     .section-head .count { font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 10px; }
     .section-tools { display: flex; align-items: center; gap: 7px; }
     .add-inline {
@@ -406,8 +415,9 @@
           <span class="weather-desc" id="weatherDesc">погода</span>
         </div>
         <div class="weather-meta" id="weatherMeta">загружаем…</div>
-        <div class="weather-source">Чебоксары · MET.no</div>
+        <div class="weather-source">Чебоксары · MET.no <span id="weatherUpdated"></span></div>
       </div>
+      <button class="weather-refresh" id="weatherRefresh" type="button" aria-label="Обновить погоду">↻</button>
     </div>
 
     <div class="section-head">
@@ -531,6 +541,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="cloud.js?v=c919b979a5"></script>
+  <script src="cloud.js?v=305a025d36"></script>
 </body>
 </html>

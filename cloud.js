@@ -80,6 +80,8 @@
     weatherTemp: $("weatherTemp"),
     weatherDesc: $("weatherDesc"),
     weatherMeta: $("weatherMeta"),
+    weatherUpdated: $("weatherUpdated"),
+    weatherRefresh: $("weatherRefresh"),
     notifyBtn: $("notifyBtn"),
     logoutBtn: $("logoutBtn")
   };
@@ -96,6 +98,7 @@
   let toastTimer = null;
   let editing = null;
   let notificationsBusy = false;
+  let weatherBusy = false;
 
   function pad(n) { return String(n).padStart(2, "0"); }
   function todayISO() {
@@ -176,16 +179,35 @@
         `${signed(weather.tmin)}…${signed(weather.tmax)}° · ` +
         `ветер ${Math.round(Number(weather.wind || 0))} м/с`;
     }
+    if (ui.weatherUpdated) {
+      const fetched = Number(weather.fetched || 0);
+      if (fetched) {
+        const time = new Date(fetched).toLocaleTimeString("ru-RU", {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+        ui.weatherUpdated.textContent = `· обновлено в ${time}`;
+      } else {
+        ui.weatherUpdated.textContent = "";
+      }
+    }
     ui.weather.dataset.kind = weather.kind || "cloud";
     ui.weather.classList.remove("hidden");
   }
 
-  async function loadWeather() {
+  async function loadWeather(force = false) {
+    if (weatherBusy) return;
     const cached = state.weather;
-    if (cached && Date.now() - Number(cached.fetched || 0) < 30 * 60 * 1000) {
+    if (
+      !force &&
+      cached &&
+      Date.now() - Number(cached.fetched || 0) < 30 * 60 * 1000
+    ) {
       renderWeather();
       return;
     }
+    weatherBusy = true;
+    if (ui.weatherRefresh) ui.weatherRefresh.disabled = true;
     try {
       const response = await fetch(WEATHER_URL, {
         headers: { Accept: "application/json" },
@@ -224,7 +246,11 @@
       } catch (e) {}
       renderWeather();
     } catch (error) {
+      if (force) showToast("Не удалось обновить погоду");
       renderWeather();
+    } finally {
+      weatherBusy = false;
+      if (ui.weatherRefresh) ui.weatherRefresh.disabled = false;
     }
   }
 
@@ -956,6 +982,9 @@
     ui.add.addEventListener("click", () => openSheet());
     ui.addInline.addEventListener("click", () => openSheet());
     ui.emptyAdd.addEventListener("click", () => openSheet());
+    if (ui.weatherRefresh) {
+      ui.weatherRefresh.addEventListener("click", () => loadWeather(true));
+    }
     ui.close.addEventListener("click", closeSheet);
     ui.cancel.addEventListener("click", closeSheet);
     ui.overlay.addEventListener("click", closeSheet);

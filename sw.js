@@ -1,4 +1,4 @@
-const CACHE = "dayplanner-shell-v9";
+const CACHE = "dayplanner-shell-v10";
 const SCOPE = self.registration.scope;
 const ASSETS = [
   "./",

@@ -316,6 +316,17 @@
     .input:focus, .select:focus, .textarea:focus { border-color: var(--accent); }
     .textarea { resize: vertical; min-height: 78px; line-height: 1.4; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .reminder-field { grid-column: 1 / -1; margin-bottom: 0; }
+    .reminder-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .reminder-chip {
+      border: 1px solid var(--border); background: var(--card-2);
+      color: var(--muted); border-radius: 999px; padding: 8px 11px;
+      font-size: 12px; line-height: 1;
+    }
+    .reminder-chip.active {
+      background: var(--accent-soft); border-color: var(--accent-soft);
+      color: var(--accent-text); font-weight: 600;
+    }
     .form-error { color: var(--red); font-size: 11px; min-height: 16px; margin: 2px 0 8px; }
     .sheet-actions { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
     .spacer { flex: 1; }
@@ -482,7 +493,7 @@
           <input class="input" id="fTime" type="time">
         </label>
       </div>
-      <div class="row2">
+      <div class="row2" style="grid-template-columns:1fr">
         <label class="field">
           <span>Длительность</span>
           <select class="select" id="fDuration">
@@ -493,19 +504,19 @@
             <option value="0">Без окончания</option>
           </select>
         </label>
-        <label class="field">
-          <span>Напомнить</span>
-          <select class="select" id="fRemind">
-            <option value="-1">Без напоминания</option>
-            <option value="0">В момент начала</option>
-            <option value="5">За 5 минут</option>
-            <option value="10">За 10 минут</option>
-            <option value="15">За 15 минут</option>
-            <option value="30">За 30 минут</option>
-            <option value="60">За 1 час</option>
-            <option value="120">За 2 часа</option>
-          </select>
-        </label>
+        <div class="field reminder-field">
+          <span>Напомнить — можно несколько</span>
+          <div class="reminder-grid" id="fReminders">
+            <button type="button" class="reminder-chip" data-minutes="0">В момент</button>
+            <button type="button" class="reminder-chip" data-minutes="5">За 5 мин</button>
+            <button type="button" class="reminder-chip" data-minutes="10">За 10 мин</button>
+            <button type="button" class="reminder-chip" data-minutes="15">За 15 мин</button>
+            <button type="button" class="reminder-chip" data-minutes="30">За 30 мин</button>
+            <button type="button" class="reminder-chip" data-minutes="60">За 1 час</button>
+            <button type="button" class="reminder-chip" data-minutes="120">За 2 часа</button>
+            <button type="button" class="reminder-chip" data-minutes="-1">Без напоминаний</button>
+          </div>
+        </div>
       </div>
       <div class="field">
         <span>Категория</span>
@@ -541,6 +552,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="cloud.js?v=305a025d36"></script>
+  <script src="cloud.js?v=20261113"></script>
 </body>
 </html>

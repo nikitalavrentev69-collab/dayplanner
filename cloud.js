@@ -68,7 +68,7 @@
     overlay: $("overlay"), sheet: $("sheet"),
     sheetTitle: $("sheetTitle"), close: $("sheetClose"),
     title: $("fTitle"), date: $("fDate"), time: $("fTime"),
-    duration: $("fDuration"), remind: $("fRemind"), note: $("fNote"),
+    duration: $("fDuration"), reminders: $("fReminders"), note: $("fNote"),
     category: $("fCategory"), categoryPicker: $("fCategoryPicker"),
     error: $("formError"), save: $("saveBtn"), cancel: $("cancelBtn"),
     del: $("deleteBtn"),
@@ -149,11 +149,35 @@
       .filter((t) => t.date === value)
       .sort((a, b) => (a.start + a.title).localeCompare(b.start + b.title));
   }
+  function normalizeReminders(value, fallback = -1) {
+    const raw = Array.isArray(value)
+      ? value
+      : (Number.isFinite(Number(value)) ? [Number(value)] : []);
+    const result = [];
+    raw.forEach((item) => {
+      const minutes = Number(item);
+      if (Number.isFinite(minutes) && minutes >= 0 && minutes <= 1440
+          && !result.includes(minutes)) {
+        result.push(minutes);
+      }
+    });
+    if (!result.length && Number(fallback) >= 0) result.push(Number(fallback));
+    return result.sort((a, b) => b - a);
+  }
+
+  function taskReminders(task) {
+    return normalizeReminders(task && task.reminders, task ? task.remind : -1);
+  }
+
+  function remindersKey(task) {
+    return taskReminders(task).join(",");
+  }
+
   function contentKey(task) {
     return [
       task.date, task.start, Number(task.duration || 0), task.title,
       task.note || "", Number(task.remind), task.category || "other",
-      Boolean(task.done)
+      Boolean(task.done), remindersKey(task)
     ].join("|");
   }
 
@@ -428,6 +452,7 @@
   }
 
   function taskFromRow(row) {
+    const reminders = normalizeReminders(row.reminders, row.remind);
     return {
       id: row.id,
       date: row.task_date,
@@ -435,7 +460,8 @@
       duration: Number(row.duration || 0),
       title: row.title || "Без названия",
       note: row.note || "",
-      remind: Number(row.remind),
+      remind: reminders.length ? Math.max(...reminders) : -1,
+      reminders: reminders,
       category: CATEGORIES[row.category] ? row.category : "other",
       done: Boolean(row.done),
       created: row.created_at || nowISO(),
@@ -444,6 +470,7 @@
   }
 
   function taskToRow(task, deleted) {
+    const reminders = taskReminders(task);
     return {
       id: task.id,
       user_id: state.session.user_id,
@@ -452,7 +479,8 @@
       duration: Number(task.duration || 0),
       title: task.title,
       note: task.note || "",
-      remind: Number(task.remind),
+      remind: reminders.length ? Math.max(...reminders) : -1,
+      reminders: reminders,
       category: task.category || "other",
       done: Boolean(task.done),
       deleted: Boolean(deleted),
@@ -499,6 +527,7 @@
           title: incoming.title,
           note: incoming.note,
           remind: incoming.remind,
+          reminders: incoming.reminders,
           category: incoming.category,
           done: incoming.done,
           updated_at: incoming.updated_at
@@ -508,7 +537,8 @@
         pushes.set(current.id, current);
       } else if (contentKey(current) !== [
         row.task_date, row.start_time, Number(row.duration || 0), row.title,
-        row.note || "", Number(row.remind), row.category || "other", Boolean(row.done)
+        row.note || "", Number(row.remind), row.category || "other", Boolean(row.done),
+        normalizeReminders(row.reminders, row.remind).join(",")
       ].join("|")) {
         pushes.set(current.id, current);
       }
@@ -704,13 +734,16 @@
         doneLabel.textContent = " · Выполнено";
         doneLabel.style.color = "var(--green)";
         meta.appendChild(doneLabel);
-      } else if (Number(task.remind) >= 0) {
-        const mins = Number(task.remind);
-        const reminder = document.createElement("span");
-        reminder.textContent = " · 🔔 " + (mins === 0 ? "в момент начала"
-          : mins % 60 === 0 ? `за ${mins / 60} ч`
-          : `за ${mins} мин`);
-        meta.appendChild(reminder);
+      } else {
+        const reminders = taskReminders(task);
+        if (reminders.length) {
+          const reminder = document.createElement("span");
+          const labels = reminders.map((mins) => mins === 0 ? "в момент"
+            : mins % 60 === 0 ? `за ${mins / 60} ч`
+            : `за ${mins} мин`);
+          reminder.textContent = " · 🔔 " + labels.join(", ");
+          meta.appendChild(reminder);
+        }
       }
       body.appendChild(meta);
 
@@ -747,6 +780,38 @@
     option.textContent = label;
     select.appendChild(option);
   }
+
+  function setReminderChips(value) {
+    const selected = new Set(normalizeReminders(value));
+    [...ui.reminders.querySelectorAll(".reminder-chip")].forEach((chip) => {
+      const minutes = Number(chip.dataset.minutes);
+      const active = minutes === -1
+        ? selected.size === 0
+        : selected.has(minutes);
+      chip.classList.toggle("active", active);
+    });
+  }
+
+  function getReminderChips() {
+    return [...ui.reminders.querySelectorAll(".reminder-chip.active")]
+      .map((chip) => Number(chip.dataset.minutes))
+      .filter((minutes) => Number.isFinite(minutes) && minutes >= 0)
+      .sort((a, b) => b - a);
+  }
+
+  ui.reminders.addEventListener("click", (event) => {
+    const chip = event.target.closest(".reminder-chip");
+    if (!chip) return;
+    const minutes = Number(chip.dataset.minutes);
+    if (minutes === -1) {
+      setReminderChips([]);
+      return;
+    }
+    const selected = new Set(getReminderChips());
+    if (selected.has(minutes)) selected.delete(minutes);
+    else selected.add(minutes);
+    setReminderChips([...selected]);
+  });
 
   function buildCategoryPicker() {
     if (!ui.categoryPicker) return;
@@ -790,9 +855,7 @@
     const duration = task ? Number(task.duration) : 60;
     ensureOption(ui.duration, duration, duration ? `${duration} минут` : "Без окончания");
     ui.duration.value = String(duration);
-    const remind = task ? Number(task.remind) : 10;
-    ensureOption(ui.remind, remind, remind < 0 ? "Без напоминания" : `За ${remind} мин`);
-    ui.remind.value = String(remind);
+    setReminderChips(task ? taskReminders(task) : [10]);
     setCategory(task ? task.category : "other");
     ui.note.value = task ? (task.note || "") : "";
     ui.overlay.classList.add("open");
@@ -820,13 +883,15 @@
       ui.error.textContent = "Укажите дату и время";
       return;
     }
+    const reminders = getReminderChips();
     const payload = {
       date: dateValue,
       start: timeValue,
       duration: Number(ui.duration.value) || 0,
       title: title,
       note: ui.note.value.trim(),
-      remind: Number(ui.remind.value),
+      reminders: reminders,
+      remind: reminders.length ? Math.max(...reminders) : -1,
       category: ui.category.value,
       updated_at: nowISO()
     };
